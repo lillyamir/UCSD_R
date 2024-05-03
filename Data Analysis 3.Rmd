@@ -1,0 +1,669 @@
+---
+title: "Data Analysis 3"
+author: "Lilly Amirjavadi"
+date: "11/17/2020"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+getwd()
+
+dat <- read.csv("/Users/lillyamirjavadi/Desktop/broward_data.csv")
+```
+
+
+**PART ONE*
+
+
+1.  Compute  and  report  the  proportion  of  defendants  belonging  to  each racial group.
+
+```{r}
+table(dat$race)
+table(dat$race)/sum(table(dat$race))
+```
+
+In the data set, 34.02% of defendants are white, 51.23% are black, 0.44% are asian, 8.83% are hispanic, 0.25% are native american, and 5.23% were classified as "other."
+
+
+
+
+2. Compute and report the two-year recidivism rate for each racial group.
+
+```{r}
+
+
+recid.white <- table(dat$two_year_recid[dat$race=="white"])/sum(table(dat$two_year_recid[dat$race=="white"]))
+recid.white
+
+recid.asian <- table(dat$two_year_recid[dat$race=="asian"])/sum(table(dat$two_year_recid[dat$race=="asian"]))
+recid.asian
+
+
+recid.black <- table(dat$two_year_recid[dat$race=="black"])/sum(table(dat$two_year_recid[dat$race=="black"]))
+recid.black
+
+
+recid.hispanic <- table(dat$two_year_recid[dat$race=="hispanic"])/sum(table(dat$two_year_recid[dat$race=="hispanic"]))
+recid.hispanic
+
+
+recid.native <- table(dat$two_year_recid[dat$race=="native american"])/sum(table(dat$two_year_recid[dat$race=="native american"]))
+recid.native
+
+
+recid.other <- table(dat$two_year_recid[dat$race=="other"])/sum(table(dat$two_year_recid[dat$race=="other"]))
+recid.other
+
+
+```
+
+
+The mean recidivism rate for "white" is 39.36%.
+The mean recidivism rate for "asian" is 28.13%.
+The mean recidivism rate for "black" is 51.43%.
+The mean recidivism rate for "hispanic" is 36.42%.
+The mean recidivism rate for "native american" is 55.56%.
+The mean recidivism rate for "other" is 35.28%.
+
+
+
+
+3. Compute  and  report  the  mean  COMPAS  risk  score  for  each  racial group.
+
+```{r}
+
+table(mean(dat$compas_risk_score[dat$race=="white"]))
+
+
+table(mean(dat$compas_risk_score[dat$race=="asian"]))
+
+
+table(mean(dat$compas_risk_score[dat$race=="black"]))
+
+
+table(mean(dat$compas_risk_score[dat$race=="hispanic"]))
+
+
+table(mean(dat$compas_risk_score[dat$race=="native american"]))
+
+
+table(mean(dat$compas_risk_score[dat$race=="other"]))
+
+```
+
+
+The mean COMPAS risk score for "white" is 3.76.
+The mean COMPAS risk score for "asian" is 2.94.
+The mean COMPAS risk score for "black" is 5.36.
+The mean COMPAS risk scire for "hispanic" is 3.46.
+The mean COMPAS risk score for "native american" is 6.17.
+The mean COMPAS risk score for "other" is 2.95.
+
+
+
+
+4.  Comment  on  these  summary  statistics.   Does  there  appear  to  be  a relationship between recidivism rates and mean risk scores across the racial groups?  Is this what we should expect?
+
+
+There seems to be a slightly positive correlation between recidivism rates and mean COMPAS risk scores across the racial groups. Higher recidivism rates appear to be couples with higher risk scores, and the same can be said with the relationship between lower risk scores and lower recidivism rates. This should be expected, because a higher risk score should indicate a higher chance of recidivism. There would be inaccuracies if, for example, a racial group's recidivism rate was very low while their COMPAS risk score was high.
+
+
+
+
+
+
+
+**PART TWO*
+
+
+1. Compare the COMPAS risk score and COMPAS binary classification variables.  What is the value of the classification threshold?  And what is the difference between what the risk score and binary classification are supposed to represent?
+
+
+```{r}
+
+summary(dat$compas_risk_score)
+
+summary(dat$compas_binary_class)
+
+
+```
+
+
+
+The value of the classification threshold is 5. That means that any risk score that is 5 or above means that a person is likely to recidivate, while a risk score lower that 5 means that the person is unlikely to recidivate. 
+
+The risk score variable is supposed to represent an assigned value between 1 and 10 that corresponds to the likelihood that an individual will recidivate; a higher value meaning that their is a higher risk. The binary classification variable assigns a value either 0 or 1 based on the risk score variable, with 0 meaning a person will not recidivate and 1 meaning that they will. Both variables are making a prediction.
+
+
+2. Based on the COMPAS binary classification variable, compute the classification accuracy (i.e.  proportion correctly classified) separately for each racial group.
+
+
+
+```{r}
+
+
+
+table(dat$two_year_recid[dat$race=="white"]==dat$compas_binary_class[dat$race=="white"])/sum(dat$race=="white")
+
+table(dat$two_year_recid[dat$race=="asian"]==dat$compas_binary_class[dat$race=="asian"])/sum(dat$race=="asian")
+
+table(dat$two_year_recid[dat$race=="black"]==dat$compas_binary_class[dat$race=="black"])/sum(dat$race=="black")
+
+table(dat$two_year_recid[dat$race=="hispanic"]==dat$compas_binary_class[dat$race=="hispanic"])/sum(dat$race=="hispanic")
+
+table(dat$two_year_recid[dat$race=="native american"]==dat$compas_binary_class[dat$race=="native american"])/sum(dat$race=="native american")
+
+table(dat$two_year_recid[dat$race=="other"]==dat$compas_binary_class[dat$race=="other"])/sum(dat$race=="other")
+
+```
+
+
+
+
+3. Now, similar to the assigned ProPublica article, we will focus on the comparison between Black and White defendants.  Compute and report the false positive rate and false negative rate separately for Black and White defendants.
+
+
+```{r}
+dat %>%
+  group_by(race) %>%
+  filter(race == "white" | race == "black") %>%
+  summarise(
+    race_count = n(),
+    false_pos_count = sum(compas_binary_class == 1 & two_year_recid == 0),
+    false_pos_percent = (false_pos_count / race_count*100),
+    false_neg_count = sum(compas_binary_class == 0 & two_year_recid == 1),
+    false_neg_percent = (false_neg_count / race_count*100),
+    .groups = "keep")
+
+
+```
+
+
+
+
+The false positive rate for White individuals is 14.22%
+The false negative rate for White individuals is 18.79%
+The false positive rate for Black individuals is 21.78%
+The false negative rate for Black individuals is 14.39%
+
+
+4. Comment  on  the  results.   What  definition(s)  of  algorithmic  fairness do these results allow you to evaluate, and what are your conclusions with  respect  to  whether  COMPAS’s  performance  meets  the  fairness definition(s)?
+
+
+
+These results allow for the evaluation of equalized odds as a definition of algorithmic fairness. This form of fairness is equivalent to having both false positive error rate balance and false negative error rate balance. According to these results, COMPAS's performance does not meet this definition, as there is a striking difference between the error rates of each respective race.
+
+
+These results also allow us to evaluate statistical parity, or group fairness, as a definition of fairness. This definition means that both groups, in this case race, have an equal probability of being assigned to the positive predicted class, also known as being classified as high-risk for recidivating. However, the COMPAS algorithm in this scenario reveals that this is not that case. Because although we know that race should not be a determining factor for the likelihood of someone recidivating, there is a clear distinction between the likelihoods of each race belonging to the high-risk category. This can be seen in the high false-positive rates of black defendants. 
+
+
+
+
+
+5. Now, imagine that an alternative classification threshold was applied to  the  algorithmic  risk  score.   In  particular,  apply  a  threshold  of  7 such that any defendant whose risk score is greater than or equal to 7 is classified as a 1 (recidivism is predicted) and otherwise classified as  a  0  (recidivism  not  predicted).   Based  on  this  new  classification,compute the false positive and false negative rates separately for Black and White defendants.
+
+
+```{r}
+
+dat$newthresh <- 0
+dat$newthresh[dat$compas_risk_score>=7] <- 1
+
+
+dat %>%
+  group_by(race) %>%
+  filter(race == "white" | race == "black") %>%
+  summarise(
+    race_count = n(),
+    false_pos_count = sum(newthresh == 1 & two_year_recid == 0),
+    false_pos_percent = (false_pos_count / race_count*100),
+    false_neg_count = sum(newthresh == 0 & two_year_recid == 1),
+    false_neg_percent = (false_neg_count / race_count*100),
+    .groups = "keep")
+```
+
+
+
+6. Comment on the results. What do you notice about the results for this new classification relative to the previous? What could be the implications if it were permissible to apply different thresholds for different racial groups?
+
+
+These results caused a significant change in the false positive percentages. By increasing the threshold, the false positive rates for black defendants drop to 12.09% and down to 5.54% for white defendants. This indicates that a smaller proportion of defendants will not be classified as high-risk and will not be wrongly incarcerated/jailed when they will not in fact recidivate. However, on the other hand, this means that the false negative percentages will increase slightly for both races. That means that 24.97% of black defendants and 27.83% of white defendants that are released will go on to recidivate. Based on the nature of each individual defendant, this could be costly and/or dangerous to the public based on the subsequent crimes they go on to commit.
+
+
+
+
+
+
+**PART THREE*
+
+
+1. To begin, split the full dataset into two separate data frames: a training dataset containing all observations whose random split variable value is “train”, and a test dataset containing all observations whose random split variable value is “test”.
+
+
+```{r}
+
+testdat <- subset(dat, dat$random_split=="test")
+testdat
+
+traindat <- subset(dat, dat$random_split=="train")
+traindat
+```
+
+
+2. Using only the training data, fit a logistic regression model in which the outcome variable (Y ) is two-year recidivism and the predictors (X) are all of the following:
+
+ Sex
+ Age
+ Total number of juvenile felony criminal charges
+ Total number of juvenile misdemeanor criminal charges
+ Total number of non-juvenile criminal charges
+ Degree of the charge
+
+You should only include each of these predictors on their own (i.e. do not include any interaction or polynomial terms). Store the model and name it mod1.
+
+
+```{r}
+
+mod1 <- glm(two_year_recid ~ sex + age + juv_fel_count + juv_misd_count +
+                priors_count + charge_degree,
+           family=binomial(link = "logit" ),
+           data = traindat)
+
+summary(mod1)
+
+
+```
+
+
+
+
+3.  Extract the in-sample(i.e. pertaining to the training data) predictions of recidivism from mod1, in the form of predicted probabilities, and plot and display a histogram of these predicted probabilities.
+
+
+```{r}
+
+mod1$fitted.values
+mod1$fitted.values[1:5]
+
+hist(mod1$fitted.values)
+
+```
+
+
+
+
+4. Compute and report the in-sample Brier score for mod1.
+
+```{r}
+
+
+sum(mean((traindat$two_year_recid - mod1$fitted.values)^2))/4836 
+
+
+
+```
+
+
+
+
+
+5. Now, using the in-sample predicted probabilities, construct a binary classification variable using 0.5 as the threshold (i.e. greater than or equal to 0.5). Based on this, compute the in-sample classification accuracy separately for Black and White defendants.
+
+
+
+```{r}
+
+threshold <- 0.5
+predprobs <- as.numeric((mod1$fitted.values>=threshold)==1)
+binclass <- as.numeric(predprobs >= threshold)
+
+pdat <- data.frame(predprobs,binclass)
+pdat
+
+white.trainaccuracy <- mean(traindat$two_year_recid[traindat$race=="white"] == predprobs[traindat$race=="white"])
+white.trainaccuracy
+
+black.trainaccuracy <- mean(traindat$two_year_recid[traindat$race=="black"] == predprobs[traindat$race=="black"])
+black.trainaccuracy
+```
+
+
+
+
+6. Now, apply your already fitted mod1 to the test data, and generate predicted probabilities of recidivism for the test data. Based on this, compute the out-of-sample (i.e. pertaining to the test data) Brier score overall, as well as the out-of-sample classification accuracy separately for Black and White defendants (again using the 0.5 threshold).
+
+
+```{r}
+
+predprobs2 <- predict(mod1, newdata = testdat, type = "response")
+b.score2 <- mean((testdat$two_year_recid - predprobs2)^2)
+testdat$binclass <- as.numeric(predprobs2 >= threshold)
+black_test <- testdat[testdat$race == "black",]
+white_test <- testdat[testdat$race == "white",]
+
+mean(black_test$two_year_recid == black_test$binclass)
+mean(white_test$two_year_recid == white_test$binclass)
+print(b.score2)
+```
+
+
+
+
+
+7. (Bonus) Compare the in-sample performance to the out-of-sample performance. Is this what you would have expected and why?
+
+
+Both accuracy values for in-sample and out-of-sample performance are very close. 
+
+
+
+8. Now, using the training data again, fit a new logistic regression model that is the same as mod1 except that it also includes race as a predictor. Store this new model and name it mod2. (Note that in real-world deployments of risk assessment algorithms in criminal justice, race is typically prohibited from being included. We may be interested to
+know, however, what the effect would be if it were hypothetically included.) Then, apply mod2 to the test data and follow the same process as above to compute the out-of-sample performance metrics (overall Brier score, as well as classification accuracy separately for
+Black and White defendants) for mod2.
+
+
+```{r}
+
+
+
+
+mod2 <- glm(two_year_recid ~ race+ sex + age + juv_fel_count + juv_misd_count + priors_count + charge_degree, family= binomial(link= "logit"), data=traindat)
+summary(mod2)
+
+predprobs3 <- predict(mod2, newdata = testdat, type = "response")
+b.score3 <- mean((testdat$two_year_recid - predprobs3)^2)
+testdat$binclass2 <- as.numeric(predprobs3 >= threshold)
+black_test2 <- testdat[testdat$race == "black",]
+white_test2 <- testdat[testdat$race == "white",]
+
+mean(black_test2$two_year_recid == black_test2$binclass)
+mean(white_test2$two_year_recid == white_test2$binclass)
+
+brier2 <- mean((dat$two_year_recid - mod2$fitted.values)^2)
+summary(brier2)
+print(b.score3)
+
+```
+
+
+
+
+9. Using a scatterplot, plot the out-of-sample predicted probabilities of mod1 vs mod2.
+
+
+
+```{r}
+
+
+plot (predprobs2, predprobs3,
+)
+
+
+```
+
+
+
+
+
+10. Comment on the results of the previous questions. Does the explicit inclusion of race in the predictive model appear to have a significant influence on model performance?
+
+
+These results show that the explicit inclusion of race in the predictive model does not have a significant influence on model performance. This is implied by the very similar classification accuracies for both in-sample and out-of-sample calculations. This could be due to the way the COMPAS model is designed, in which there cannot be discrimination based on race in terms of recidivism rates. Therefore, we should not expect to see differences in accuracy.  
+
+
+
+
+*PART FOUR*
+
+
+1. Now, copy the following into your R Markdown file. This will create two hypothetical defendants. After you have inspected the hypo def data frame, describe and compare the characteristics of each of the two defendants in words.
+
+```{r}
+
+hypo_def <-
+  data.frame(sex = c(1,0), age = c(18,41),
+  juv_fel_count = c(0,0), juv_misd_count = c(1,0),
+  priors_count = c(0,1), charge_degree = c(0,1),
+  race = c("black","white")
+)
+
+
+hypo_def
+
+```
+
+
+This data frame shows two hypothetical defendants who differ on nearly every included variable. The first defendant is an 18 year old black female, with no juvenile felonies but one juvenile misdemeanor, no prior criminal charges, and is charged with a misdemeanor. The second defendant is a 41 year old white male with no juvenile felonies or juvenile misdemeanors, but has one prior charge and is being charged with a felony. 
+
+
+
+
+2. Using mod2 that you already fit in the previous section, compute and report the predicted probabilities that each of these defendants contained in hypo def recidivates. Based on these results alone, can you tell which characteristics of the defendants account for higher or lower recidivism probabilities?
+
+
+```{r}
+
+
+prediction <- predict(mod2, newdata = hypo_def, type = "response")
+prediction
+```
+
+
+Based on these predicted values, you cannot discern exactly if there is one or multiple specific variables/characteristics account for higher or lower recidivism probabilities. This could be due to the fact that both defendants differ from each other in a myriad of ways. However, you can infer based on the listed qualities from the hypo_def frame. For instance, you can look at where the two defendants differ (apart from age and race), and gather that defendant one must have some qualities that make give them significantly higher probabilities. This could be linked to factors such as misdemeanors or what type of crime they are being charged with. However, one cannot say this for certain without testing these variables specifically. 
+
+
+
+3.  Now we will modify the characteristics of the second defendant to gradually match the first defendant. First, modify the hypo def data frame to change the second defendant’s race to match that of the first. Recompute the predicted probabilities of recidivism for both defendants, and comment on the results. How much did that change the results for the second defendant?
+
+```{r}
+
+
+hypo_def1 <-
+  data.frame(sex = c(1,0), age = c(18,41),
+  juv_fel_count = c(0,0), juv_misd_count = c(1,0),
+  priors_count = c(0,1), charge_degree = c(0,1),
+  race = c("black","black")
+)
+
+
+hypo_def1
+
+
+
+prediction1 <- predict(mod2, newdata = hypo_def1, type = "response")
+prediction1
+
+```
+
+
+The predicted probability for the second defendant increased slightly to 32.79%. However, it did not change so significantly to imply that race is a factor, as the first defendant's probability is slightly higher at 39.2%.
+
+
+
+
+
+4. Keeping the modification you just made, now also change the second defendant’s sex to match the first. Again recompute the predicted probabilities of recidivism, and comment on the results. How much did that change the results for the second defendant?
+
+
+```{r}
+
+hypo_def2 <-
+  data.frame(sex = c(1,1), age = c(18,41),
+  juv_fel_count = c(0,0), juv_misd_count = c(1,0),
+  priors_count = c(0,1), charge_degree = c(0,1),
+  race = c("black","black")
+)
+
+
+hypo_def2
+
+
+
+prediction2 <- predict(mod2, newdata = hypo_def2, type = "response")
+prediction2
+
+
+```
+Here, we see that defendant two's probability dropped significantly to 25.59%, which could indicate the females are less likely to recidivate than males. 
+
+
+
+
+5.Keeping both modifications you already made, now also change the second defendant’s priors count to match the first. Again recompute the predicted probabilities of recidivism, and comment on the results. How much did that change the results for the second defendant?
+
+```{r}
+
+hypo_def3 <-
+  data.frame(sex = c(1,1), age = c(18,41),
+  juv_fel_count = c(0,0), juv_misd_count = c(1,0),
+  priors_count = c(0,0), charge_degree = c(0,1),
+  race = c("black","black")
+)
+
+
+hypo_def3
+
+
+
+prediction3 <- predict(mod2, newdata = hypo_def3, type = "response")
+prediction3
+
+
+
+
+```
+
+This change also led to a decrease in the predicted probability, bringing it down to 22.68%. This could also imply that having 0 prior criminal charges will decrease the likelihood of a defendant recidivating. 
+
+
+
+6. Keeping all modifications you already made, now also change the second defendant’s age to match the first. Again recompute the predicted probabilities of recidivism, and comment on the results. How much did that change the results for the second defendant?
+
+
+```{r}
+
+hypo_def4 <-
+  data.frame(sex = c(1,1), age = c(18,18),
+  juv_fel_count = c(0,0), juv_misd_count = c(1,0),
+  priors_count = c(0,0), charge_degree = c(0,1),
+  race = c("black","black")
+)
+
+
+hypo_def4
+
+
+
+prediction4 <- predict(mod2, newdata = hypo_def4, type = "response")
+prediction4
+
+
+
+```
+
+
+This time, the second defendant's probability increased considerably to 45.04% when the age was lowered to match the first defendant's. However, it still does not explain why the first defendant's probability is still slightly lower at 39.2% when both defendants' age, race, gender, and prior convictions are all the same.
+
+
+
+
+7. Finally, keeping all modifications you already made, now also change the second defendant’s charge degree to match the first. Again recompute the predicted probabilities of recidivism, and comment on the results. How much did that change the results for the second defendant?
+
+```{r}
+
+hypo_def5 <-
+  data.frame(sex = c(1,1), age = c(18,18),
+  juv_fel_count = c(0,0), juv_misd_count = c(1,0),
+  priors_count = c(0,0), charge_degree = c(0,0),
+  race = c("black","black")
+)
+
+
+hypo_def5
+
+
+
+prediction5 <- predict(mod2, newdata = hypo_def5, type = "response")
+prediction5
+
+
+
+```
+
+
+This change brought the second defendant's probability up to 40.58%, getting them significantly closer to the first defendant's predicted probability. Now their probabilities are almost identical. 
+
+
+
+8. Comment on these results as a whole. What characteristics seem to be most important in predicting the probability of recidivism.
+
+
+Based off of the results from the previous predictions, it is clear that the characteristic that seems to be the most important is the charge degree, when it comes to increasing the likelihood that a person will recidivate. Both defendants in this case were only charged with misdemeanors, and that may mean that they will be more likely to commit additional smaller offenses. On the other hand if they were charged with felonies, they may not be likely to commit major crimes again such as homicide. However, it is also important to consider the fact that the probabilities dropped significantly when it was discerned that they had no prior charges and that they were both women. That leads to the question of how high the probabilities would be if they were men with prior charges who were convicted of misdemeanors. 
+
+
+
+
+9. In the full dataset, how different are Black and White defendants on average with respect to those most predictive characteristics? You should use whatever functions or statistics you deem appropriate/useful to answer this question.
+
+
+```{r}
+
+hist(dat$charge_degree[dat$race=="white"])
+
+hist(dat$charge_degree[dat$race=="black"])
+
+
+hist(dat$priors_count[dat$race=="white"])
+    
+hist(dat$priors_count[dat$race=="black"])
+
+
+```
+
+
+
+First, I created tow histograms comparing the distribution charge degrees of each respective race. Although both races appear to have more felonies than misdemeanors, its important to note that not only do black defendants have a significantly higher number of defendants in both categories, but it's also apparent that the proportion of black defendants charged with felonies is much higher than the proportion of whites charged with felonies.
+
+Another variable I observed was the number of prior charges between the two racial groups. Again, I constructed two histograms comparing the distribution of the number of prior charges to black and white defendants respectively. When observing the histogram for white defendants, it is evident that the highest proportion of defendants had less than 5 prior charges, with a maximum value slightly above 20. In comparison to black defendants, there is a higher proportion (compared to white defendants) of individuals with more than 10 prior charges, even though the majority of defendants have less than 15. 
+
+
+
+
+
+
+**PART FIVE*
+
+To the best of your ability, recreate the COMPAS calibration plot shown on slide 31 of the Criminal Justice Case Study lecture slide deck from class (October 29). To do this, you should use the full dataset. Given the data you have access to, your plot will not be an exact match, but it should be very close. You do not need to include the light grey shading around the lines.
+
+
+
+```{r}
+
+some.results <- dat %>%
+group_by(race, compas_risk_score) %>%
+summarise(mean_recid = mean(two_year_recid)) %>%
+filter(race=="black" | race=="white") 
+
+
+library(ggplot2)
+ggplot(some.results,
+aes(x = compas_risk_score, y = mean_recid, color = race)) +
+geom_point() + geom_line()
+
+
+
+```
+
+
+
+
+
+
